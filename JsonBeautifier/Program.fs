@@ -1,7 +1,6 @@
 ﻿open System
 open System.Collections.Generic
 open System.IO
-open System.Text
 open FParsec
 
 module JSonParser =
@@ -55,47 +54,39 @@ open JSonParser
 
 [<EntryPoint>]
 let main _ =
-    let beautify jdata =        
-        let result = new StringBuilder()
+    let beautify jdata =
         let mutable indent = 0
-        let inline add str = str |> string |> result.Append |> ignore
-        let addIndent () = String.replicate indent " " |> add
-
         let toList dic = dic |> Seq.map (fun (KeyValue(k, v)) -> (k, v)) |> List.ofSeq
 
         let rec inner src = 
             match src with
-            | JNull -> add "null"
-            | JBool b -> add b
-            | JNumber n -> add n
-            | JString s -> "\"" + s + "\"" |> add
+            | JNull -> "null"
+            | JBool b -> string b
+            | JNumber n -> string n
+            | JString s -> "\"" + s + "\""
             | JList lst ->
-                add "[\n"
                 indent <- indent + 2
-                for object in lst do
-                    addIndent ()
-                    inner object
-                    if object <> List.last lst then add ","
-                    add "\n"
-                indent <- indent - 2
-                addIndent ()
-                add "]"
-            | JObject ob ->
-                add "{\n"
+                lst
+                |> List.map (fun x -> 
+                    "\n" + String.replicate indent " " + inner x)
+                |> fun l -> (",", l) |> String.Join
+                |> fun s -> 
+                    indent <- indent - 2
+                    "[" + s + "\n" + String.replicate indent " " + "]"
+            | JObject dict ->
                 indent <- indent + 2
-                let dictList = toList ob
-                for (key, value) in dictList do
-                    addIndent ()
-                    "\"" + key + "\": " |> add
-                    inner value
-                    if (key, value) <> List.last dictList then add ","
-                    add "\n"
-                indent <- indent - 2
-                addIndent ()
-                add "}"
+                dict
+                |> toList
+                |> List.map (fun x ->
+                    let key = "\"" + fst x + "\": "
+                    let value = inner <| snd x
+                    "\n" + String.replicate indent " " + key + value)
+                |> fun l -> (",", l) |> String.Join
+                |> fun s ->
+                    indent <- indent - 2
+                    "{" + s + "\n" + String.replicate indent " " + "}"
 
         jdata |> inner
-        result |> string
 
     use stream = new StreamReader(Console.OpenStandardInput())
     let text = stream.ReadToEnd()
