@@ -56,7 +56,6 @@ open JSonParser
 let main _ =
     let beautify jdata =
         let mutable indent = 0
-        let toList dic = dic |> Seq.map (fun (KeyValue(k, v)) -> (k, v)) |> List.ofSeq
 
         let rec inner src = 
             match src with
@@ -76,11 +75,8 @@ let main _ =
             | JObject dict ->
                 indent <- indent + 2
                 dict
-                |> toList
-                |> List.map (fun x ->
-                    let key = "\"" + fst x + "\": "
-                    let value = inner <| snd x
-                    "\n" + String.replicate indent " " + key + value)
+                |> Seq.map (fun (KeyValue(k, v)) ->
+                    "\n" + String.replicate indent " " + "\"" + k + "\": " + inner v)
                 |> fun l -> (",", l) |> String.Join
                 |> fun s ->
                     indent <- indent - 2
