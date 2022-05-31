@@ -60,7 +60,7 @@ let main _ =
         let rec inner src = 
             match src with
             | JNull -> "null"
-            | JBool b -> string b
+            | JBool b -> string b |> fun s -> s.ToLower()
             | JNumber n -> string n
             | JString s -> "\"" + s + "\""
             | JList lst ->
